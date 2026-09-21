@@ -326,7 +326,10 @@ class GranarySmartCameraFeeder(CameraDevice):
     @property
     def manual_feed_quantity(self):
         if self._manual_feed_quantity is None:
-            _LOGGER.warning(f"manual_feed_quantity is None for {self.serial}, setting default to 1.")
+            _LOGGER.debug(
+                "No manual feed quantity cached for %s; using one portion",
+                self.serial,
+            )
             self._manual_feed_quantity = 1  # Default value
         return self._manual_feed_quantity
         

@@ -26,6 +26,19 @@ _LOGGER = logging.getLogger(__name__)
 _MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
 
+def _image_content_type(data: bytes) -> str | None:
+    """Return an image type from trusted file signatures."""
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith((b"GIF87a", b"GIF89a")):
+        return "image/gif"
+    if len(data) >= 12 and data.startswith(b"RIFF") and data[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
 def _trusted_media_url(url: str) -> bool:
     """Return whether a worklog media URL uses a known PETLIBRO host shape."""
     try:
@@ -66,6 +79,7 @@ class PetLibroImageEntity(PetLibroEntity[_DeviceT], ImageEntity):
         ImageEntity.__init__(self, hub.hass)
         self._image_bytes: bytes | None = None
         self._image_id: str | None = None
+        self._rejected_image_id: str | None = None
         self._fetching = False
 
     @property
@@ -89,7 +103,7 @@ class PetLibroImageEntity(PetLibroEntity[_DeviceT], ImageEntity):
 
     def _schedule_image_update(self) -> None:
         image_id = self.entity_description.image_id_fn(self.device)
-        if self._fetching or image_id is None:
+        if self._fetching or image_id is None or image_id == self._rejected_image_id:
             return
         if image_id == self._image_id and self._image_bytes is not None:
             return
@@ -118,14 +132,6 @@ class PetLibroImageEntity(PetLibroEntity[_DeviceT], ImageEntity):
                         response.status,
                     )
                     return
-                content_type = response.headers.get("Content-Type", "")
-                if not content_type.lower().startswith("image/"):
-                    _LOGGER.warning(
-                        "PETLIBRO media response for %s was not an image",
-                        self.device.serial,
-                    )
-                    return
-
                 content_length = response.content_length
                 if content_length is not None and content_length > _MAX_IMAGE_BYTES:
                     _LOGGER.warning(
@@ -149,8 +155,18 @@ class PetLibroImageEntity(PetLibroEntity[_DeviceT], ImageEntity):
             image_bytes = b"".join(chunks)
             if not image_bytes:
                 return
+            content_type = _image_content_type(image_bytes)
+            if content_type is None:
+                self._rejected_image_id = image_id
+                _LOGGER.warning(
+                    "PETLIBRO media response for %s contained unsupported image data",
+                    self.device.serial,
+                )
+                return
             self._image_bytes = image_bytes
             self._image_id = image_id
+            self._rejected_image_id = None
+            self._attr_content_type = content_type
             self._cached_image = None
             self._attr_image_last_updated = utcnow()
             self.async_write_ha_state()

@@ -118,8 +118,9 @@ class Device(Event):
 
     def set_device_id(self) -> None:
         """Update Device object data with it's Home Assistant device ID."""
-        device = self.hub.device_register.async_get_device(
-            identifiers=self.device_identifiers
+        device = self.hub.device_register.async_get_device_by_identifier(
+            next(iter(self.device_identifiers)),
+            self.hub.entry.entry_id,
         )
         if device and getattr(device, "id", False):
             self.update_data({"device_id": device.id})
