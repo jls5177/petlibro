@@ -51,6 +51,41 @@ If you enjoy this integration and want to support its development, please consid
 ### Cameras
 * Scout Smart Camera (PLPC001) - cloud status and settings metadata
 
+### PETLIBRO meal dashboard card
+
+Home Assistant 2026.6 and newer shows **PETLIBRO Meal** in the dashboard card
+picker when you select a Granary camera feeder's latest meal or event image
+entity. The integration provides three device-associated variants without
+requiring copied entity IDs:
+
+* **Compact** - a small photo and meal summary for a main dashboard.
+* **Photo** - a larger latest-event image with cat, intake, duration, and time.
+* **Timeline** - recent meal sensor changes from Recorder, with the current
+  latest photo.
+
+Compact and Timeline cards default to full-width, auto-height Sections grid
+layouts so their meal details are not compressed into narrow columns.
+
+Go to **Edit dashboard → Add card → By entity**, choose any of the feeder's
+`Latest Event` or `Last Meal` entities, then choose one of the PETLIBRO Meal
+suggestions under **Community**.
+
+After installing or updating the integration, restart Home Assistant and
+refresh the browser once so the versioned card module is loaded.
+
+The image is served through Home Assistant; the card never receives PETLIBRO's
+temporary signed media URL. Timeline photos are latest-only. Historical meal
+rows require Recorder history for the meal sensors.
+
+If Lovelace resources are configured in YAML mode, add this module resource:
+
+```yaml
+lovelace:
+  resources:
+    - url: /petlibro/frontend/petlibro-meal-card.js?v=1.4
+      type: module
+```
+
 ### Pending Device(s)
 
 ### Some Devices / May or may not work as intended

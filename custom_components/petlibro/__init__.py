@@ -4,6 +4,7 @@ from datetime import timedelta  # For managing the update interval
 from homeassistant.core import HomeAssistant
 from homeassistant.const import Platform
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed  # For coordinator and update handling
 from .devices import Device
@@ -24,8 +25,10 @@ from .devices.litterboxes.luma_smart_litter_box import LumaSmartLitterBox
 from .const import DOMAIN, CONF_EMAIL, CONF_PASSWORD, PLATFORMS, UPDATE_INTERVAL_SECONDS  # Assuming UPDATE_INTERVAL_SECONDS is defined in const
 from .hub import PetLibroHub
 from .services import async_setup_services, async_unload_services
+from .frontend import async_register_frontend
 
 _LOGGER = logging.getLogger(__name__)
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 # Define the platforms for each device type
@@ -212,6 +215,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as err:
         _LOGGER.error(f"Failed to set up PetLibro integration: {err}", exc_info=True)
         return False
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Set up PETLIBRO frontend resources."""
+    await async_register_frontend(hass)
+    return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

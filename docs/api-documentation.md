@@ -640,6 +640,19 @@ All endpoints below take a JSON body with `"deviceSn": "<serial>"` plus paramete
 
 ## Camera Credential Endpoints
 
+## Home Assistant meal dashboard card
+
+The integration bundles `custom:petlibro-meal-card` for Granary camera feeder
+worklogs. It composes the existing image and latest-meal sensors by Home
+Assistant device ID and entity translation key, so renamed entity IDs do not
+need to be copied into card configuration.
+
+On Home Assistant 2026.6 or newer, selecting any PETLIBRO latest-meal or latest
+event image entity in the dashboard card picker offers Compact, Photo, and
+Timeline suggestions. The Timeline variant reads up to seven days of Recorder
+history and displays at most twelve meal changes. It does not retain historical
+photos; the displayed image is always the current latest event thumbnail.
+
 ### POST /member/third/tutk/info
 
 Kalay/TUTK P2P camera credentials, account-scoped. This is a credential layer
