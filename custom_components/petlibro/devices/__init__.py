@@ -1,5 +1,6 @@
 from typing import Dict, Type
 from .device import Device
+from .cameras.scout_smart_camera import ScoutSmartCamera
 
 from . import Device
 from .device import Device
@@ -30,5 +31,6 @@ product_name_map : Dict[str, Type[Device]] = {
     "Dockstream 2 Smart Cordless Fountain": Dockstream2SmartCordlessFountain,
     "Dockstream 2 Smart Fountain": Dockstream2SmartFountain,
     "Space Smart Feeder": SpaceSmartFeeder,
+    "Scout Smart Camera": ScoutSmartCamera,
     "Luma Smart Litter Box": LumaSmartLitterBox
 }

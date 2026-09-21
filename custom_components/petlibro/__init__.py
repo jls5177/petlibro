@@ -7,6 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed  # For coordinator and update handling
 from .devices import Device
+from .devices.cameras.scout_smart_camera import ScoutSmartCamera
 from .devices.feeders.feeder import Feeder
 from .devices.feeders.air_smart_feeder import AirSmartFeeder
 from .devices.feeders.granary_smart_feeder import GranarySmartFeeder
@@ -68,6 +69,11 @@ PLATFORMS_BY_TYPE = {
         Platform.SELECT,
         Platform.TEXT,
         Platform.UPDATE
+    ),
+    ScoutSmartCamera: (
+        Platform.SENSOR,
+        Platform.BINARY_SENSOR,
+        Platform.UPDATE,
     ),
     OneRFIDSmartFeeder: (
         Platform.SENSOR,

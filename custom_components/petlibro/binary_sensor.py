@@ -25,6 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 
 from .devices import Device
 from .devices.device import Device
+from .devices.cameras.scout_smart_camera import ScoutSmartCamera
 from .devices.feeders.feeder import Feeder
 from .devices.feeders.air_smart_feeder import AirSmartFeeder
 from .devices.feeders.granary_smart_feeder import GranarySmartFeeder
@@ -369,6 +370,7 @@ DEVICE_BINARY_SENSOR_MAP: dict[type[Device], list[PetLibroBinarySensorEntityDesc
             icon="mdi:wifi",
             device_class=BinarySensorDeviceClass.CONNECTIVITY,
             should_report=lambda device: device.online is not None,
+            available_fn=lambda device: device.online is not None,
             name="Wi-Fi"
         ),
         PetLibroBinarySensorEntityDescription[GranarySmartCameraFeeder](
@@ -450,6 +452,7 @@ DEVICE_BINARY_SENSOR_MAP: dict[type[Device], list[PetLibroBinarySensorEntityDesc
             translation_key="pet_detection_enabled",
             icon="mdi:paw",
             should_report=lambda device: device.pet_detection_enabled is not None,
+            available_fn=lambda device: device.pet_detection_enabled is not None,
             name="AI Pet Detection"
         ),
         PetLibroBinarySensorEntityDescription[Granary2VisionFeeder](
@@ -457,6 +460,7 @@ DEVICE_BINARY_SENSOR_MAP: dict[type[Device], list[PetLibroBinarySensorEntityDesc
             translation_key="human_detection_enabled",
             icon="mdi:human",
             should_report=lambda device: device.human_detection_enabled is not None,
+            available_fn=lambda device: device.human_detection_enabled is not None,
             name="Human Detection"
         ),
         PetLibroBinarySensorEntityDescription[Granary2VisionFeeder](
@@ -464,6 +468,7 @@ DEVICE_BINARY_SENSOR_MAP: dict[type[Device], list[PetLibroBinarySensorEntityDesc
             translation_key="talk_channel_active",
             icon="mdi:phone-in-talk",
             should_report=lambda device: device.talk_channel_active is not None,
+            available_fn=lambda device: device.talk_channel_active is not None,
             name="Two-Way Talk Active"
         ),
         PetLibroBinarySensorEntityDescription[Granary2VisionFeeder](
@@ -473,6 +478,81 @@ DEVICE_BINARY_SENSOR_MAP: dict[type[Device], list[PetLibroBinarySensorEntityDesc
             should_report=lambda device: device.auto_stop_feed_enabled is not None,
             available_fn=lambda device: device.auto_stop_feed_enabled is not None,
             name="Auto Stop Feed"
+        ),
+    ],
+    ScoutSmartCamera: [
+        PetLibroBinarySensorEntityDescription[ScoutSmartCamera](
+            key="online",
+            translation_key="online",
+            icon="mdi:wifi",
+            device_class=BinarySensorDeviceClass.CONNECTIVITY,
+            should_report=lambda device: device.online is not None,
+            available_fn=lambda device: device.online is not None,
+            name="Wi-Fi",
+        ),
+        PetLibroBinarySensorEntityDescription[ScoutSmartCamera](
+            key="camera_switch",
+            translation_key="camera_switch",
+            icon="mdi:camera",
+            should_report=lambda device: device.camera_switch is not None,
+            available_fn=lambda device: device.camera_switch is not None,
+            name="Camera",
+        ),
+        PetLibroBinarySensorEntityDescription[ScoutSmartCamera](
+            key="motion_detection_switch",
+            translation_key="motion_detection_switch",
+            icon="mdi:motion-sensor",
+            should_report=lambda device: device.motion_detection_switch is not None,
+            available_fn=lambda device: device.motion_detection_switch is not None,
+            name="Motion Detection",
+        ),
+        PetLibroBinarySensorEntityDescription[ScoutSmartCamera](
+            key="pet_detection_enabled",
+            translation_key="pet_detection_enabled",
+            icon="mdi:paw",
+            should_report=lambda device: device.pet_detection_enabled is not None,
+            available_fn=lambda device: device.pet_detection_enabled is not None,
+            name="AI Pet Detection",
+        ),
+        PetLibroBinarySensorEntityDescription[ScoutSmartCamera](
+            key="human_detection_enabled",
+            translation_key="human_detection_enabled",
+            icon="mdi:human",
+            should_report=lambda device: device.human_detection_enabled is not None,
+            available_fn=lambda device: device.human_detection_enabled is not None,
+            name="Human Detection",
+        ),
+        PetLibroBinarySensorEntityDescription[ScoutSmartCamera](
+            key="sound_detection_switch",
+            translation_key="sound_detection_switch",
+            icon="mdi:ear-hearing",
+            should_report=lambda device: device.sound_detection_switch is not None,
+            available_fn=lambda device: device.sound_detection_switch is not None,
+            name="Sound Detection",
+        ),
+        PetLibroBinarySensorEntityDescription[ScoutSmartCamera](
+            key="motion_tracking_enabled",
+            translation_key="motion_tracking_enabled",
+            icon="mdi:axis-arrow",
+            should_report=lambda device: device.motion_tracking_enabled is not None,
+            available_fn=lambda device: device.motion_tracking_enabled is not None,
+            name="Motion Tracking",
+        ),
+        PetLibroBinarySensorEntityDescription[ScoutSmartCamera](
+            key="video_record_switch",
+            translation_key="video_record_switch",
+            icon="mdi:record-rec",
+            should_report=lambda device: device.video_record_switch is not None,
+            available_fn=lambda device: device.video_record_switch is not None,
+            name="Video Recording",
+        ),
+        PetLibroBinarySensorEntityDescription[ScoutSmartCamera](
+            key="talk_channel_active",
+            translation_key="talk_channel_active",
+            icon="mdi:phone-in-talk",
+            should_report=lambda device: device.talk_channel_active is not None,
+            available_fn=lambda device: device.talk_channel_active is not None,
+            name="Two-Way Talk Active",
         ),
     ],
     OneRFIDSmartFeeder: [

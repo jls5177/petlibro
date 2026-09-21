@@ -32,34 +32,15 @@ class Granary2VisionFeeder(GranarySmartCameraFeeder):
         except PetLibroAPIError as err:
             _LOGGER.error(f"Error refreshing free feeding setting for Granary2VisionFeeder: {err}")
 
-        # Isolated in its own error handler: TUTK credential retrieval failing
-        # (e.g. no camera entitlement) shouldn't disrupt the rest of the refresh.
-        try:
-            tutk_info = await self.api.device_tutk_info(self.serial)
-            self.update_data({
-                "tutkInfo": tutk_info or {},
-            })
-        except PetLibroAPIError as err:
-            _LOGGER.error(f"Error refreshing TUTK camera info for Granary2VisionFeeder: {err}")
-
-        try:
-            data_real_info = await self.api.device_data_real_info(self.serial)
-            self.update_data({
-                "dataRealInfo": data_real_info or {},
-            })
-        except PetLibroAPIError as err:
-            self.update_data({"dataRealInfo": {}})
-            _LOGGER.error(f"Error refreshing data real info for Granary2VisionFeeder: {err}")
-
     @property
-    def night_vision(self) -> str:
+    def night_vision(self) -> str | None:
         """Return the current night vision mode.
 
         Unlike the Granary Smart Camera Feeder, this device reports night
         vision under getAttributeSetting.nightVisionMode; realInfo.nightVision
         is always null.
         """
-        return self._data.get("getAttributeSetting", {}).get("nightVisionMode", "unknown")
+        return super().night_vision
 
     @property
     def left_food_low(self) -> bool | None:
@@ -82,19 +63,19 @@ class Granary2VisionFeeder(GranarySmartCameraFeeder):
         return not bool(value)
 
     @property
-    def pet_detection_enabled(self) -> bool:
+    def pet_detection_enabled(self) -> bool | None:
         """Return whether AI pet detection is enabled."""
-        return bool(self._data.get("getAttributeSetting", {}).get("petDetectionSwitch", False))
+        return super().pet_detection_enabled
 
     @property
-    def human_detection_enabled(self) -> bool:
+    def human_detection_enabled(self) -> bool | None:
         """Return whether AI human detection is enabled."""
-        return bool(self._data.get("realInfo", {}).get("enableHumanDetection", False))
+        return super().human_detection_enabled
 
     @property
-    def talk_channel_active(self) -> bool:
+    def talk_channel_active(self) -> bool | None:
         """Return whether a 2-way talk session is currently active."""
-        return bool(self._data.get("realInfo", {}).get("talkChannelState", False))
+        return super().talk_channel_active
 
     @property
     def radar_sensing_level(self) -> str:
@@ -205,25 +186,6 @@ class Granary2VisionFeeder(GranarySmartCameraFeeder):
         """Return whether feeding stops at the configured bowl maximum."""
         value = self._data.get("dataRealInfo", {}).get("autoStopFeedSwitch")
         return value if isinstance(value, bool) else None
-
-    @property
-    def camera_auth_info(self) -> str | None:
-        """Return the Kalay/TUTK per-device camera auth info string.
-
-        Not returned by /member/third/tutk/info (that endpoint only returns
-        the account-level userToken/appTutkUrl) - this comes from realInfo.
-        """
-        return self._data.get("realInfo", {}).get("cameraAuthInfo")
-
-    @property
-    def tutk_user_token(self) -> str | None:
-        """Return the Kalay/TUTK user token used to establish a P2P session."""
-        return self._data.get("tutkInfo", {}).get("userToken")
-
-    @property
-    def tutk_app_url(self) -> str | None:
-        """Return the Kalay/TUTK app URL/endpoint for this account."""
-        return self._data.get("tutkInfo", {}).get("appTutkUrl")
 
     async def set_free_feeding_mode(self) -> None:
         """Enable Free Feeding (Smart Feed) mode."""

@@ -16,6 +16,7 @@ from .hub import PetLibroHub  # Adjust the import path as necessary
 from .member import MemberEntity
 
 from .devices import Device
+from .devices.cameras.scout_smart_camera import ScoutSmartCamera
 from .devices.feeders.feeder import Feeder
 from .devices.feeders.air_smart_feeder import AirSmartFeeder
 from .devices.feeders.granary_smart_feeder import GranarySmartFeeder
@@ -191,8 +192,11 @@ class PetLibroSensorEntity(PetLibroEntity[_DeviceT], SensorEntity):
                 "auto_feed_max_weight",
                 "portion_to_gram_ratio",
                 "free_feeding_leftover_weight",
+                "last_meal_intake",
             ):
                 return UnitOfMass.GRAMS
+            case "last_meal_duration":
+                return UnitOfTime.SECONDS
             case key if key in (
                 "today_feeding_quantity_volume",
                 "last_feed_quantity_volume",
@@ -218,6 +222,7 @@ class PetLibroSensorEntity(PetLibroEntity[_DeviceT], SensorEntity):
                 "auto_feed_max_weight",
                 "portion_to_gram_ratio",
                 "free_feeding_leftover_weight",
+                "last_meal_intake",
             ):
                 feed_unit = getattr(self.member, "feedUnitType", None)
                 if feed_unit == Unit.OUNCES:
@@ -284,18 +289,6 @@ class PetLibroSensorEntity(PetLibroEntity[_DeviceT], SensorEntity):
                 return {
                     unit.symbol: VolumeConverter.convert(getattr(self.device, key, 0), UnitOfVolume.MILLILITERS, unit.symbol)
                     for unit in VALID_UNIT_TYPES[API.WATER_UNIT] if unit
-                }
-            case "wifi_ssid":
-                # Kalay/TUTK camera credential layer (Granary2VisionFeeder only).
-                # Not a video stream itself - an external TUTK-compatible bridge
-                # would use these to establish its own P2P session.
-                camera_auth_info = getattr(self.device, "camera_auth_info", None)
-                if camera_auth_info is None:
-                    return super().extra_state_attributes
-                return {
-                    "camera_auth_info": camera_auth_info,
-                    "tutk_user_token": getattr(self.device, "tutk_user_token", None),
-                    "tutk_app_url": getattr(self.device, "tutk_app_url", None),
                 }
         return super().extra_state_attributes
 
@@ -686,7 +679,42 @@ DEVICE_SENSOR_MAP: dict[type[Device], list[PetLibroSensorEntityDescription]] = {
             icon="mdi:motion-sensor",
             name="Video Recording Mode",
             should_report=lambda device: device.video_record_mode is not None
-        )
+        ),
+        PetLibroSensorEntityDescription[GranarySmartCameraFeeder](
+            key="last_meal_time",
+            translation_key="last_meal_time",
+            icon="mdi:clock-outline",
+            device_class=SensorDeviceClass.TIMESTAMP,
+            name="Last Meal Time",
+            should_report=lambda device: device.last_meal_time is not None,
+        ),
+        PetLibroSensorEntityDescription[GranarySmartCameraFeeder](
+            key="last_meal_intake",
+            translation_key="last_meal_intake",
+            icon="mdi:scale",
+            native_unit_of_measurement=UnitOfMass.GRAMS,
+            device_class=SensorDeviceClass.WEIGHT,
+            state_class=SensorStateClass.MEASUREMENT,
+            name="Last Meal Intake",
+            should_report=lambda device: device.last_meal_intake is not None,
+        ),
+        PetLibroSensorEntityDescription[GranarySmartCameraFeeder](
+            key="last_meal_duration",
+            translation_key="last_meal_duration",
+            icon="mdi:timer-outline",
+            native_unit_of_measurement=UnitOfTime.SECONDS,
+            device_class=SensorDeviceClass.DURATION,
+            state_class=SensorStateClass.MEASUREMENT,
+            name="Last Meal Duration",
+            should_report=lambda device: device.last_meal_duration is not None,
+        ),
+        PetLibroSensorEntityDescription[GranarySmartCameraFeeder](
+            key="last_meal_pets",
+            translation_key="last_meal_pets",
+            icon="mdi:paw",
+            name="Last Meal Pets",
+            should_report=lambda device: device.last_meal_pets is not None,
+        ),
     ],
     Granary2VisionFeeder: [
         PetLibroSensorEntityDescription[Granary2VisionFeeder](
@@ -832,6 +860,60 @@ DEVICE_SENSOR_MAP: dict[type[Device], list[PetLibroSensorEntityDescription]] = {
             state_class=SensorStateClass.MEASUREMENT,
             entity_category=EntityCategory.DIAGNOSTIC,
             should_report=lambda device: device.portion_to_gram_ratio is not None
+        ),
+    ],
+    ScoutSmartCamera: [
+        PetLibroSensorEntityDescription[ScoutSmartCamera](
+            key="wifi_ssid",
+            translation_key="wifi_ssid",
+            icon="mdi:wifi",
+            name="Wi-Fi SSID",
+            should_report=lambda device: device.wifi_ssid is not None,
+        ),
+        PetLibroSensorEntityDescription[ScoutSmartCamera](
+            key="wifi_rssi",
+            translation_key="wifi_rssi",
+            icon="mdi:wifi",
+            native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+            device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+            state_class=SensorStateClass.MEASUREMENT,
+            name="Wi-Fi Signal Strength",
+            should_report=lambda device: device.wifi_rssi is not None,
+        ),
+        PetLibroSensorEntityDescription[ScoutSmartCamera](
+            key="resolution",
+            translation_key="resolution",
+            icon="mdi:camera",
+            name="Camera Resolution",
+            should_report=lambda device: device.resolution is not None,
+        ),
+        PetLibroSensorEntityDescription[ScoutSmartCamera](
+            key="night_vision",
+            translation_key="night_vision",
+            icon="mdi:weather-night",
+            name="Night Vision Mode",
+            should_report=lambda device: device.night_vision is not None,
+        ),
+        PetLibroSensorEntityDescription[ScoutSmartCamera](
+            key="video_record_mode",
+            translation_key="video_record_mode",
+            icon="mdi:record-rec",
+            name="Video Recording Mode",
+            should_report=lambda device: device.video_record_mode is not None,
+        ),
+        PetLibroSensorEntityDescription[ScoutSmartCamera](
+            key="cloud_storage_state",
+            translation_key="cloud_storage_state",
+            icon="mdi:cloud",
+            name="Cloud Storage State",
+            should_report=lambda device: device.cloud_storage_state is not None,
+        ),
+        PetLibroSensorEntityDescription[ScoutSmartCamera](
+            key="ptz_position",
+            translation_key="ptz_position",
+            icon="mdi:camera-control",
+            name="PTZ Position",
+            should_report=lambda device: device.ptz_position is not None,
         ),
     ],
     OneRFIDSmartFeeder: [

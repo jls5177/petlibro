@@ -72,6 +72,7 @@ List all devices on the account.
 - `"Granary Smart Feeder"` → `GranarySmartFeeder`
 - `"Granary Smart Camera Feeder"` → `GranarySmartCameraFeeder`
 - `"Granary 2 Vision"` → `Granary2VisionFeeder` (PLAF205)
+- `"Scout Smart Camera"` → `ScoutSmartCamera` (PLPC001)
 - `"One RFID Smart Feeder"` → `OneRFIDSmartFeeder`
 - `"Polar Wet Food Feeder"` → `PolarWetFoodFeeder`
 - `"Dockstream Smart Fountain"` → `DockstreamSmartFountain`
@@ -524,6 +525,11 @@ Recent device events.
 
 Work/feeding records (past 30 days).
 
+The response can contain mixed record types even when the request includes a
+`type` filter. Camera devices may return lifecycle, firmware, meal, feeding,
+and media records together, so consumers must inspect each record's `type` and
+`eventType`.
+
 **Request:**
 ```json
 {
@@ -544,6 +550,15 @@ Work/feeding records (past 30 days).
         "type": "GRAIN_OUTPUT_SUCCESS",
         "recordTime": 1689000000000,
         "actualGrainNum": 4
+      },
+      {
+        "type": "MEAL_RECORD",
+        "eventType": "PET_EATING_RECORD_EVENT",
+        "recordTime": 1689000100000,
+        "intake": 16,
+        "duration": 25,
+        "petName": "Milo",
+        "thumbnailSignedUrl": "https://<petlibro-storage-host>/member/..."
       }
     ]
   }
@@ -627,14 +642,20 @@ All endpoints below take a JSON body with `"deviceSn": "<serial>"` plus paramete
 
 ### POST /member/third/tutk/info
 
-Kalay/TUTK P2P camera credentials, account-scoped (not per-device despite taking a serial
-in the request). This is a credential layer only - it does not provide a video stream by
-itself. An external Kalay/TUTK-compatible client would need these plus the per-device
-`cameraAuthInfo` from `realInfo` to establish its own P2P session. See PetLibro/petlibro#269
-(upstream, unmerged as of this writing) for prior art exposing these attributes without
+Kalay/TUTK P2P camera credentials, account-scoped. This is a credential layer
+only - it does not provide a video stream by itself. An external
+Kalay/TUTK-compatible client would need these plus the per-device `cameraId`
+and `cameraAuthInfo` to establish its own P2P session. See
+jjjonesjr33/petlibro#269 for prior art exposing these attributes without
 attempting to build a full camera platform.
 
-**Request:** `{"id": "<deviceSn>", "deviceSn": "<deviceSn>"}`
+Treat `userToken`, `cameraAuthInfo`, camera IDs, signed media URLs, raw device
+dumps, and packet captures as secrets. The integration keeps credential values
+in memory for future bridge use and does not publish them as Home Assistant
+entity state or attributes. Signed thumbnail URLs are fetched into memory,
+validated against expected HTTPS storage hosts, and are not persisted.
+
+**Request:** `{}`
 
 **Response:**
 ```json

@@ -5,13 +5,14 @@ import aiohttp
 from typing import cast
 from logging import getLogger
 from ...exceptions import PetLibroAPIError
-from ..device import Device
+from ..cameras.camera import CameraDevice
+from ..worklog import first_record, grain_quantity
 from datetime import datetime, timedelta, time
 from homeassistant.util import dt as dt_util
 
 _LOGGER = getLogger(__name__)
 
-class GranarySmartCameraFeeder(Device):  # Inherit directly from Device
+class GranarySmartCameraFeeder(CameraDevice):
     def __init__(self, *args, **kwargs):
         """Initialize the feeder with default values."""
         super().__init__(*args, **kwargs)
@@ -19,32 +20,22 @@ class GranarySmartCameraFeeder(Device):  # Inherit directly from Device
 
     async def refresh(self):
         """Refresh the device data from the API."""
-        try:
-            await super().refresh()  # Call the refresh method from Device
-    
-            # Fetch specific data for this device
-            grain_status = await self.api.device_grain_status(self.serial)
-            real_info = await self.api.device_real_info(self.serial)
-            attribute_settings = await self.api.device_attribute_settings(self.serial)
-            get_upgrade = await self.api.get_device_upgrade(self.serial)
-            get_feeding_plan_today = await self.api.device_feeding_plan_today_new(self.serial)
-            get_work_record = await self.api.get_device_work_record(self.serial)
-            feeding_plan_list = (await self.api.device_feeding_plan_list(self.serial)
-                if self._data.get("enableFeedingPlan") else [])
-            get_device_events = await self.api.device_events(self.serial)
-            # Update internal data with fetched API data
-            self.update_data({
-                "grainStatus": grain_status or {},
-                "realInfo": real_info or {},
-                "getAttributeSetting": attribute_settings or {},
-                "getUpgrade": get_upgrade or {},
-                "getfeedingplantoday": get_feeding_plan_today or {},
-                "feedingPlan": feeding_plan_list or [],
-                "workRecord": get_work_record or [],
-                "getDeviceEvents": get_device_events or {},
-            })
-        except PetLibroAPIError as err:
-            _LOGGER.error(f"Error refreshing data for GranarySmartCameraFeeder: {err}")
+        await super().refresh()
+        await self._refresh_camera_endpoint(
+            "grainStatus",
+            self.api.device_grain_status(self.serial),
+        )
+        await self._refresh_camera_endpoint(
+            "getfeedingplantoday",
+            self.api.device_feeding_plan_today_new(self.serial),
+        )
+        if self._data.get("enableFeedingPlan"):
+            await self._refresh_camera_endpoint(
+                "feedingPlan",
+                self.api.device_feeding_plan_list(self.serial),
+            )
+        else:
+            self.update_data({"feedingPlan": []})
 
     @property
     def available(self) -> bool:
@@ -103,8 +94,8 @@ class GranarySmartCameraFeeder(Device):  # Inherit directly from Device
             return 0.0
 
     @property
-    def online(self) -> bool:
-        return bool(self._data.get("realInfo", {}).get("online", False))
+    def online(self) -> bool | None:
+        return super().online
 
     @property
     def running_state(self) -> bool:
@@ -135,13 +126,12 @@ class GranarySmartCameraFeeder(Device):  # Inherit directly from Device
         return self._data.get("realInfo", {}).get("mac", "unknown")
 
     @property
-    def wifi_ssid(self) -> str:
-        return self._data.get("realInfo", {}).get("wifiSsid", "unknown")
+    def wifi_ssid(self) -> str | None:
+        return super().wifi_ssid
 
     @property
-    def wifi_rssi(self) -> int:
-        wifi_rssi = self._data.get("realInfo", {}).get("wifiRssi")
-        return wifi_rssi if isinstance(wifi_rssi, int) else -100
+    def wifi_rssi(self) -> int | None:
+        return super().wifi_rssi
 
     @property
     def electric_quantity(self) -> float:
@@ -195,14 +185,14 @@ class GranarySmartCameraFeeder(Device):  # Inherit directly from Device
         return bool(self._data.get("realInfo", {}).get("screenDisplaySwitch", False))
 
     @property
-    def resolution(self) -> str:
+    def resolution(self) -> str | None:
         """Return the camera resolution."""
-        return self._data.get("realInfo", {}).get("resolution", "unknown")
+        return super().resolution
 
     @property
-    def night_vision(self) -> str:
+    def night_vision(self) -> str | None:
         """Return the current night vision mode."""
-        return self._data.get("realInfo", {}).get("nightVision", "unknown")
+        return super().night_vision
 
     @property
     def enable_video_record(self) -> bool:
@@ -210,24 +200,22 @@ class GranarySmartCameraFeeder(Device):  # Inherit directly from Device
         return self._data.get("realInfo", {}).get("enableVideoRecord", False)
 
     @property
-    def video_record_switch(self) -> bool:
+    def video_record_switch(self) -> bool | None:
         """Return the state of the video recording switch."""
-        return self._data.get("realInfo", {}).get("videoRecordSwitch", False)
+        return super().video_record_switch
 
     @property
-    def video_record_mode(self) -> str:
+    def video_record_mode(self) -> str | None:
         """Return the current video recording mode."""
-        return self._data.get("realInfo", {}).get("videoRecordMode", "unknown")
+        return super().video_record_mode
 
     @property
     def motion_detected(self) -> bool:
-        events = self._data.get("getDeviceEvents", {}).get("data", {}).get("eventInfos", [])
-        return any(event.get("eventKey") == "MOTION_DETECTED" for event in events)
+        return super().motion_detected
 
     @property
     def sound_detected(self) -> bool:
-        events = self._data.get("getDeviceEvents", {}).get("data", {}).get("eventInfos", [])
-        return any(event.get("eventKey") == "SOUND_DETECTED" for event in events)
+        return super().sound_detected
     
     @property
     def remaining_desiccant(self) -> float | None:
@@ -241,36 +229,14 @@ class GranarySmartCameraFeeder(Device):  # Inherit directly from Device
     @property
     def last_feed_time(self) -> datetime | None:
         """Return the recordTime of the last successful grain output as a datetime object (UTC)."""
-        _LOGGER.debug("last_feed_time called for device: %s", self.serial)
-        raw = self._data.get("workRecord", [])
-
-        if not raw or not isinstance(raw, list):
-            return None
-        
-        for day_entry in raw:
-            work_records = day_entry.get("workRecords", [])
-            for record in work_records:
-                if record.get("type") == "GRAIN_OUTPUT_SUCCESS":
-                    timestamp_ms = record.get("recordTime", 0)
-                    if timestamp_ms:
-                        # HA utility: always return UTC datetime
-                        dt = dt_util.utc_from_timestamp(timestamp_ms / 1000)
-                        _LOGGER.debug("Returning datetime object: %s", dt.isoformat())
-                        return dt
-        return None
+        record = first_record(self.work_records, "GRAIN_OUTPUT_SUCCESS")
+        return record.timestamp if record else None
 
     @property
     def last_feed_quantity(self) -> int:
         """Return the last feed amount."""
-        raw = self._data.get("workRecord", [])
-        if raw and isinstance(raw, list):
-            for day_entry in raw:
-                for record in day_entry.get("workRecords", []):
-                    _LOGGER.debug("Evaluating record type: %s", record.get("type"))
-                    if record.get("type") == "GRAIN_OUTPUT_SUCCESS":
-                        actualGrainNum = record.get("actualGrainNum")
-                        return actualGrainNum if isinstance(actualGrainNum, int) else 0
-        return 0
+        record = first_record(self.work_records, "GRAIN_OUTPUT_SUCCESS")
+        return grain_quantity(record) or 0
 
     @property
     def feeding_plan_today_data(self) -> dict:

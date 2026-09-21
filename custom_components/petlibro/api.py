@@ -15,6 +15,7 @@
 
 from logging import getLogger
 from hashlib import md5
+import asyncio
 import sys
 from urllib.parse import urljoin
 from typing import Any, Dict, List, TypeAlias
@@ -93,7 +94,11 @@ class PetLibroSession:
             except Exception as e:
                 raise PetLibroAPIError(f"Error parsing response JSON: {e}")
 
-            _LOGGER.debug(f"Response data: {data}")
+            _LOGGER.debug(
+                "PETLIBRO response received for %s with API code %s",
+                url,
+                data.get("code") if isinstance(data, dict) else None,
+            )
 
             if resp.status != 200:
                 raise PetLibroAPIError(f"Request failed with status: {resp.status}")
@@ -103,12 +108,16 @@ class PetLibroSession:
                 # Trigger a re-login and get the new token
                 new_token = await self.re_login()
                 kwargs["headers"]["token"] = new_token
-                _LOGGER.debug(f"Retrying request with new token: {new_token}")
+                _LOGGER.debug("Retrying request with refreshed token")
 
                 # Retry the request with the new token
                 async with self.websession.request(method, joined_url, **kwargs) as retry_resp:
                     retry_data = await retry_resp.json()
-                    _LOGGER.debug(f"Retry response: {retry_data}")
+                    _LOGGER.debug(
+                        "PETLIBRO retry response received for %s with API code %s",
+                        url,
+                        retry_data.get("code") if isinstance(retry_data, dict) else None,
+                    )
                     return retry_data.get("data")
 
             if data.get("code") != 0:
@@ -143,7 +152,7 @@ class PetLibroSession:
                     raise PetLibroAPIError(f"Failed to login, status: {response.status}")
 
                 response_data = await response.json()
-                _LOGGER.debug(f"Re-login response data: {response_data}")
+                _LOGGER.debug("Re-login response received")
 
                 if not isinstance(response_data, dict) or "token" not in response_data.get("data", {}):
                     raise PetLibroAPIError("Token not found during login.")
@@ -154,7 +163,7 @@ class PetLibroSession:
 
                 # Save the new token in the config entry
                 if hasattr(self, 'api') and self.api.hass and self.api.config_entry:
-                    _LOGGER.debug(f"Saving new token to config entry: {self.token}")
+                    _LOGGER.debug("Saving refreshed token to config entry")
                     self.api.hass.config_entries.async_update_entry(
                         self.api.config_entry,
                         data={**self.api.config_entry.data, "token": self.token}
@@ -196,10 +205,11 @@ class PetLibroAPI:
         # Load the saved token if available
         if config_entry and "token" in config_entry.data:
             self.token = config_entry.data["token"]
-            _LOGGER.debug(f"Loaded saved token: {self.token}")
+            _LOGGER.debug("Loaded saved token")
 
         self._last_api_call_times = {}  # To store last call time per device
         self._cached_responses = {}  # To store cached responses for short periods
+        self._tutk_info_lock = asyncio.Lock()
 
         if "PL_PetAPI" not in sys.modules:
             from .pets.api import PL_PetAPI
@@ -230,7 +240,7 @@ class PetLibroAPI:
             })
 
             if not isinstance(data, dict) or "token" not in data or not isinstance(data["token"], str):
-                _LOGGER.error("No token found during login. Response data: %s", data)
+                _LOGGER.error("No token found during login response")
                 raise PetLibroAPIError("No token found during login.")
 
             self.session.token = data["token"]
@@ -417,11 +427,8 @@ class PetLibroAPI:
                 "type": ["GRAIN_OUTPUT_SUCCESS"]
             })
 
-            # Log and inspect what actually came back
-            _LOGGER.debug("Raw response_data from workRecord: %s", response_data)
-            _LOGGER.debug("Type of response_data: %s", type(response_data))
-
-            # Just save whatever we got — don't attempt .json()
+            # Preserve the mixed response shape; camera worklogs may contain
+            # signed media URLs that must not be written to logs.
             self._last_api_call_times[f"{device_id}_work_record"] = now
             self._cached_responses[f"{device_id}_work_record"] = response_data
 
@@ -554,13 +561,27 @@ class PetLibroAPI:
             "mode": mode
         })
 
-    async def device_tutk_info(self, serial: str) -> Dict[str, Any]:
-        """Get Kalay/TUTK P2P camera credentials (UID, auth token, app URL) for a camera-equipped device.
+    async def tutk_info(self) -> Dict[str, Any]:
+        """Get account-scoped Kalay/TUTK session information."""
+        cache_key = "tutk_info"
+        async with self._tutk_info_lock:
+            now = utcnow()
+            last_call_time = self._last_api_call_times.get(cache_key)
+            if last_call_time and (now - last_call_time) < timedelta(minutes=5):
+                cached = self._cached_responses.get(cache_key)
+                return cached if isinstance(cached, dict) else {}
 
-        This is the credential layer only - it does not itself provide a video stream.
-        An external TUTK-compatible client/bridge is needed to actually pull video.
-        """
-        return await self.session.post_serial("/member/third/tutk/info", serial)
+            response = await self.session.post("/member/third/tutk/info", json={})
+            if not isinstance(response, dict):
+                raise PetLibroAPIError("Invalid TUTK info response format")
+            self._last_api_call_times[cache_key] = now
+            self._cached_responses[cache_key] = response
+            return response
+
+    async def device_tutk_info(self, serial: str) -> Dict[str, Any]:
+        """Return account-scoped TUTK info for backward compatibility."""
+        del serial
+        return await self.tutk_info()
 
     async def device_get_bound_pets(self, device_sn: str) -> list[dict]:
         """Get pets bound to a device."""

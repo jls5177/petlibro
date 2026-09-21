@@ -225,6 +225,24 @@
             "video_record_mode": {
                 "name": "Video Recording Mode"
             },
+            "last_meal_time": {
+                "name": "Last Meal Time"
+            },
+            "last_meal_intake": {
+                "name": "Last Meal Intake"
+            },
+            "last_meal_duration": {
+                "name": "Last Meal Duration"
+            },
+            "last_meal_pets": {
+                "name": "Last Meal Pets"
+            },
+            "cloud_storage_state": {
+                "name": "Cloud Storage State"
+            },
+            "ptz_position": {
+                "name": "PTZ Position"
+            },
             "next_feeding_day": {
                 "name": "Feeding Schedule"
             },
@@ -354,6 +372,9 @@
         "image": {
             "avatar": {
                 "name": "Avatar"
+            },
+            "latest_event_thumbnail": {
+                "name": "Latest Event"
             }
         },
         "date": {
@@ -533,6 +554,18 @@
             },
             "auto_stop_feed_enabled": {
                 "name": "Auto Stop Feed"
+            },
+            "camera_switch": {
+                "name": "Camera"
+            },
+            "motion_detection_switch": {
+                "name": "Motion Detection"
+            },
+            "sound_detection_switch": {
+                "name": "Sound Detection"
+            },
+            "motion_tracking_enabled": {
+                "name": "Motion Tracking"
             }
         },
         "number": {
