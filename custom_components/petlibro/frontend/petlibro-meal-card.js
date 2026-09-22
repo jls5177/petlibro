@@ -7,6 +7,10 @@ const FULL_WIDTH_GRID_OPTIONS = Object.freeze({
   columns: "full",
   rows: "auto",
 });
+const PHOTO_GRID_OPTIONS = Object.freeze({
+  columns: 9,
+  rows: "auto",
+});
 const MEAL_KEYS = Object.freeze({
   image: "latest_event_thumbnail",
   time: "last_meal_time",
@@ -97,6 +101,7 @@ function suggestionsForEntity(hass, entityId) {
         entity: entityId,
         device_id: entry.device_id,
         variant: "photo",
+        grid_options: { ...PHOTO_GRID_OPTIONS },
       },
     },
     {
@@ -217,7 +222,7 @@ class PetLibroMealCard extends HTMLElement {
 
   getGridOptions() {
     if (this._config?.variant === "photo") {
-      return { rows: 6, columns: 6, min_rows: 4, min_columns: 3 };
+      return { ...PHOTO_GRID_OPTIONS, min_columns: 6 };
     }
     return { ...FULL_WIDTH_GRID_OPTIONS };
   }

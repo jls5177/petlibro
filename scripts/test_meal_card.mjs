@@ -104,6 +104,13 @@ for (const label of ["Compact", "Timeline"]) {
     throw new Error(`${label} suggestion did not request a full-width grid`);
   }
 }
+const photoSuggestion = suggestions.find((item) => item.label === "Photo");
+if (
+  photoSuggestion.config.grid_options?.columns !== 9 ||
+  photoSuggestion.config.grid_options?.rows !== "auto"
+) {
+  throw new Error("Photo suggestion did not request a nine-column grid");
+}
 if (
   CardClass.getStubConfig(hass, [], []).entity !==
   "image.kitchen_latest_event"
@@ -127,6 +134,15 @@ if (
   throw new Error(
     "Timeline card grid defaults are not full width and auto height",
   );
+}
+instance._config = { variant: "photo" };
+const photoGridOptions = instance.getGridOptions();
+if (
+  photoGridOptions.columns !== 9 ||
+  photoGridOptions.rows !== "auto" ||
+  photoGridOptions.min_columns !== 6
+) {
+  throw new Error("Photo card grid sizing does not enforce its minimum width");
 }
 instance._hass = {
   ...hass,

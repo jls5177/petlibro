@@ -64,7 +64,8 @@ requiring copied entity IDs:
   latest photo.
 
 Compact and Timeline cards default to full-width, auto-height Sections grid
-layouts so their meal details are not compressed into narrow columns.
+layouts so their meal details are not compressed into narrow columns. The
+Photo card defaults to nine columns and cannot be resized below six columns.
 
 Go to **Edit dashboard → Add card → By entity**, choose any of the feeder's
 `Latest Event` or `Last Meal` entities, then choose one of the PETLIBRO Meal
