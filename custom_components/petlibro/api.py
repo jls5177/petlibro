@@ -22,7 +22,8 @@ from typing import Any, Dict, List, TypeAlias
 from datetime import timedelta
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util.dt import utcnow
-from .exceptions import PetLibroAPIError
+from .const import CONF_API_TOKEN
+from .exceptions import PetLibroAPIError, PetLibroAPIRejected, PetLibroInvalidAuth
 from aiohttp import ClientSession
 
 import aiohttp
@@ -41,6 +42,7 @@ class PetLibroSession:
         self.email = email
         self.password = password
         self.region = region
+        self._relogin_lock = asyncio.Lock()
         self.headers = {
             "source": "ANDROID",
             "language": "EN",
@@ -85,50 +87,43 @@ class PetLibroSession:
             _LOGGER.debug("Using token from config entry")
         else:
             _LOGGER.warning("No token available for request. Attempting to log in...")
+        sent_token = kwargs["headers"].get("token")
 
-        # Send the request
-        async with self.websession.request(method, joined_url, **kwargs) as resp:
-            _LOGGER.debug(f"Received response status: {resp.status}")
-            try:
-                data = await resp.json()
-            except Exception as e:
-                raise PetLibroAPIError(f"Error parsing response JSON: {e}")
+        async def read_response() -> dict[str, Any]:
+            async with self.websession.request(method, joined_url, **kwargs) as resp:
+                if resp.status in (401, 403) and url == "/member/auth/login":
+                    raise PetLibroInvalidAuth("PETLIBRO login rejected")
+                if resp.status != 200:
+                    raise PetLibroAPIError(f"Request failed with status: {resp.status}")
+                try:
+                    data = await resp.json()
+                except (ValueError, aiohttp.ClientError) as err:
+                    raise PetLibroAPIError("Invalid API response JSON") from err
+                if not isinstance(data, dict) or type(data.get("code")) is not int:
+                    raise PetLibroAPIError("Invalid API response envelope")
+                _LOGGER.debug("PETLIBRO response received for %s with API code %s", url, data["code"])
+                return data
 
-            _LOGGER.debug(
-                "PETLIBRO response received for %s with API code %s",
-                url,
-                data.get("code") if isinstance(data, dict) else None,
-            )
-
-            if resp.status != 200:
-                raise PetLibroAPIError(f"Request failed with status: {resp.status}")
-
-            if data.get("code") == 1009:  # NOT_YET_LOGIN error code
-                _LOGGER.debug(f"NOT_YET_LOGIN error occurred for {joined_url}. Trying re-login.")
-                # Trigger a re-login and get the new token
-                new_token = await self.re_login()
-                kwargs["headers"]["token"] = new_token
-                _LOGGER.debug("Retrying request with refreshed token")
-
-                # Retry the request with the new token
-                async with self.websession.request(method, joined_url, **kwargs) as retry_resp:
-                    retry_data = await retry_resp.json()
-                    _LOGGER.debug(
-                        "PETLIBRO retry response received for %s with API code %s",
-                        url,
-                        retry_data.get("code") if isinstance(retry_data, dict) else None,
-                    )
-                    return retry_data.get("data")
-
-            if data.get("code") != 0:
-                raise PetLibroAPIError(f"Code: {data.get('code')}, Message: {data.get('msg')}")
-
-            return data.get("data") or {}
+        data = await read_response()
+        if data["code"] == 1009 and url != "/member/auth/login":
+            # Only a definitive token rejection is safe to retry, including for writes.
+            async with self._relogin_lock:
+                if self.token is not None and self.token != sent_token:
+                    token = self.token
+                else:
+                    token = await self.re_login()
+            kwargs["headers"]["token"] = token
+            data = await read_response()
+        if data["code"] != 0:
+            raise PetLibroAPIRejected(data["code"], data.get("msg"))
+        # Preserve existing falsey-to-dict behavior except for actual empty lists.
+        value = data.get("data")
+        return value if isinstance(value, list) else value or {}
 
     async def re_login(self) -> str:
         """Re-login to get a new token when the old one expires."""
         try:
-            _LOGGER.debug(f"Attempting re-login with email: {self.email} and region: {self.region}")
+            _LOGGER.debug("Attempting PETLIBRO re-login")
 
             async with self.websession.post(
                 urljoin(self.base_url, "/member/auth/login"),
@@ -148,14 +143,27 @@ class PetLibroSession:
             ) as response:
                 _LOGGER.debug(f"Re-login response status: {response.status}")
 
+                if response.status in (401, 403):
+                    raise PetLibroInvalidAuth("PETLIBRO re-login rejected")
                 if response.status != 200:
                     raise PetLibroAPIError(f"Failed to login, status: {response.status}")
 
-                response_data = await response.json()
+                try:
+                    response_data = await response.json()
+                except (ValueError, aiohttp.ClientError) as err:
+                    raise PetLibroAPIError("Invalid PETLIBRO login response JSON") from err
                 _LOGGER.debug("Re-login response received")
 
-                if not isinstance(response_data, dict) or "token" not in response_data.get("data", {}):
-                    raise PetLibroAPIError("Token not found during login.")
+                if not isinstance(response_data, dict) or type(response_data.get("code")) is not int:
+                    raise PetLibroAPIError("Invalid PETLIBRO login response envelope")
+                if response_data["code"] != 0:
+                    raise PetLibroAPIRejected(response_data["code"], response_data.get("msg"))
+                if (
+                    not isinstance(response_data.get("data"), dict)
+                    or not isinstance(response_data["data"].get("token"), str)
+                    or not response_data["data"]["token"]
+                ):
+                    raise PetLibroAPIError("Token not found during PETLIBRO login")
 
                 # Get the new token from response data
                 new_token = response_data["data"]["token"]
@@ -166,18 +174,15 @@ class PetLibroSession:
                     _LOGGER.debug("Saving refreshed token to config entry")
                     self.api.hass.config_entries.async_update_entry(
                         self.api.config_entry,
-                        data={**self.api.config_entry.data, "token": self.token}
+                        data={**self.api.config_entry.data, CONF_API_TOKEN: self.token}
                     )
 
                 return new_token
 
-        except aiohttp.ClientError as e:
-            _LOGGER.error(f"Re-login failed due to a client error: {e}")
-            raise PetLibroAPIError(f"Client error during re-login: {e}")
-
-        except Exception as e:
-            _LOGGER.error(f"Re-login attempt failed due to an unexpected error: {e}")
-            raise PetLibroAPIError(f"Unexpected error during re-login: {e}")
+        except PetLibroInvalidAuth:
+            raise
+        except aiohttp.ClientError as err:
+            raise PetLibroAPIError("PETLIBRO re-login connection failed") from err
 
 class PetLibroAPI:
     """PetLibro API class"""
@@ -203,8 +208,9 @@ class PetLibroAPI:
         self.session.api = self
 
         # Load the saved token if available
-        if config_entry and "token" in config_entry.data:
-            self.token = config_entry.data["token"]
+        if config_entry and CONF_API_TOKEN in config_entry.data:
+            self.token = config_entry.data[CONF_API_TOKEN]
+            self.session.token = self.token
             _LOGGER.debug("Loaded saved token")
 
         self._last_api_call_times = {}  # To store last call time per device
@@ -239,7 +245,7 @@ class PetLibroAPI:
                 "type": None
             })
 
-            if not isinstance(data, dict) or "token" not in data or not isinstance(data["token"], str):
+            if not isinstance(data, dict) or not isinstance(data.get("token"), str) or not data["token"]:
                 _LOGGER.error("No token found during login response")
                 raise PetLibroAPIError("No token found during login.")
 
@@ -247,6 +253,8 @@ class PetLibroAPI:
             _LOGGER.debug("Login successful")
             return self.session.token
 
+        except PetLibroAPIError:
+            raise
         except Exception as e:
             _LOGGER.error(f"Login failed: {e}")
             raise PetLibroAPIError(f"Login attempt failed: {e}")
@@ -516,6 +524,23 @@ class PetLibroAPI:
         """
         _LOGGER.debug("Requesting list of devices")
         return await self.session.post("/device/device/list", json={})  # Ensure JSON is passed here
+
+    async def list_incoming_shares(self) -> list[object]:
+        """List invitations received by this PETLIBRO account."""
+        data = await self.session.post(
+            "/device/deviceShare/myShareList", json={"shareType": 2}
+        )
+        if not isinstance(data, list):
+            raise PetLibroAPIError("Invalid incoming share list response format")
+        return data
+
+    async def accept_incoming_share(self, share_id: int) -> None:
+        """Accept a single incoming invitation."""
+        if type(share_id) is not int:
+            raise ValueError("Share ID must be an integer")
+        await self.session.post(
+            "/device/deviceShare/rec", json={"shareId": share_id, "rec": True}
+        )
 
     async def device_base_info(self, serial: str) -> Dict[str, Any]:
         return await self.session.post_serial("/device/device/baseInfo", serial)

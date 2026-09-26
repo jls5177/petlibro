@@ -48,12 +48,14 @@
                 "data": {
                     "manual_feed_portions": "手動給餌量をポーション単位で設定",
                     "pet_feed_quantity_no_rfid": "非RFIDのペット消費量を含める",
-                    "enable_shared_pets": "共有デバイスのペットを表示"
+                    "enable_shared_pets": "共有デバイスのペットを表示",
+                    "auto_accept_shares": "受信したすべてのデバイス招待を自動承認"
                 },
                 "data_description": {
                     "manual_feed_portions": "デフォルト: ペットフードの選択単位に基づいて設定します ({uom})。",
                     "pet_feed_quantity_no_rfid": "デバイスに1匹のペットのみが割り当てられている場合、ペットの消費量には非RFIDデバイスも含まれます。",
-                    "enable_shared_pets": "あなたと共有しているデバイスにリンクされた他のアカウントのペットにアクセスします。"
+                    "enable_shared_pets": "あなたと共有しているデバイスにリンクされた他のアカウントのペットにアクセスします。",
+                    "auto_accept_shares": "このPETLIBROアカウントに届いた保留中のデバイス招待をすべて自動承認します。このアカウントを招待できる人は誰でもデバイスへのアクセスを許可できます。"
                 }
             },
             "account_settings": {

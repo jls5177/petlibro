@@ -26,6 +26,18 @@
       "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
     }
   },
+  "options": {
+    "step": {
+      "integration_settings": {
+        "data": {
+          "auto_accept_shares": "Automatically accept all incoming device invitations"
+        },
+        "data_description": {
+          "auto_accept_shares": "Automatically accept every pending device invitation sent to this PETLIBRO account. Anyone who sends this account an invitation can grant it access to a device."
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "feeding_mode": {

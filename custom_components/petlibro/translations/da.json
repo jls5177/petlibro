@@ -48,12 +48,14 @@
                 "data": {
                     "manual_feed_portions": "Indstil manuel fodermængde efter portioner",
                     "pet_feed_quantity_no_rfid": "Inkluder ikke-RFID kæledyrsforbrug",
-                    "enable_shared_pets": "Vis kæledyr fra delte enheder"
+                    "enable_shared_pets": "Vis kæledyr fra delte enheder",
+                    "auto_accept_shares": "Accepter automatisk alle indgående enhedsinvitationer"
                 },
                 "data_description": {
                     "manual_feed_portions": "Standard: Indstil efter den valgte enhed til dyrefoder ({uom}).",
                     "pet_feed_quantity_no_rfid": "Kæledyrsforbrug vil inkludere ikke-RFID-enheder, når kun ét kæledyr er tilknyttet dem.",
-                    "enable_shared_pets": "Få adgang til kæledyr fra andre konti, der er knyttet til enheder, som de deler med dig."
+                    "enable_shared_pets": "Få adgang til kæledyr fra andre konti, der er knyttet til enheder, som de deler med dig.",
+                    "auto_accept_shares": "Alle afventende enhedsinvitationer til denne PETLIBRO-konto accepteres automatisk. Alle, der inviterer denne konto, kan give den adgang til en enhed."
                 }
             },
             "account_settings": {

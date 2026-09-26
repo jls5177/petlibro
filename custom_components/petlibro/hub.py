@@ -60,7 +60,9 @@ class PetLibroHub:
             region,
             email,
             password,
-            self.entry.data.get(CONF_API_TOKEN)
+            self.entry.data.get(CONF_API_TOKEN),
+            config_entry=self.entry,
+            hass=hass,
         )
 
         # Setup DataUpdateCoordinator to periodically refresh device data

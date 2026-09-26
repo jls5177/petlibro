@@ -83,7 +83,7 @@ If Lovelace resources are configured in YAML mode, add this module resource:
 ```yaml
 lovelace:
   resources:
-    - url: /petlibro/frontend/petlibro-meal-card.js?v=1.4
+    - url: /petlibro/frontend/petlibro-meal-card.js?v=1.4.3
       type: module
 ```
 
@@ -144,6 +144,21 @@ logger:
   > Only one account can be logged in at the same time.
   >
   > If you to want to keep your phone's app connected, create another account for this integration and share your device(s) to it.
+
+### Automatically accepting shared devices
+
+In **Settings → Devices & Services → PETLIBRO → Configure → Integration settings**,
+enable **Automatically accept all incoming device invitations** (off by default).
+The integration checks after setup and every five minutes, then accepts **every
+pending incoming device invitation sent to this PETLIBRO account**. Accepted
+devices appear after one scheduled integration reload. This does not reject
+invitations.
+
+**Security:** Enable this only if you trust invitations sent to this account:
+anyone able to invite this account can grant it access to a device without
+another approval step. Leave it off to review invitations manually in the
+PETLIBRO app. The integration does not request an invitation list while this
+option is disabled.
   
 ## Installation (Manual)
 

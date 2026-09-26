@@ -26,6 +26,7 @@ from .const import DOMAIN, CONF_EMAIL, CONF_PASSWORD, PLATFORMS, UPDATE_INTERVAL
 from .hub import PetLibroHub
 from .services import async_setup_services, async_unload_services
 from .frontend import async_register_frontend
+from .share_approval import async_start_share_approval, async_remove_share_approval
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -209,6 +210,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         await async_setup_services(hass)
 
+        async_start_share_approval(hass, entry, hub.api)
         _LOGGER.info(f"Successfully set up PetLibro integration for {email}")
         return True
 
@@ -243,6 +245,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error(f"Failed to unload PetLibro entry for {entry.data.get(CONF_EMAIL)}")
 
     return unload_ok
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Drop share approval state only when an entry is permanently removed."""
+    async_remove_share_approval(hass, entry)
 
 
 async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEntry, device_entry: DeviceEntry) -> bool:

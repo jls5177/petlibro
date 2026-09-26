@@ -48,12 +48,14 @@
                 "data": {
                     "manual_feed_portions": "Définir la quantité de nourriture manuelle par portions",
                     "pet_feed_quantity_no_rfid": "Inclure la consommation des animaux sans RFID",
-                    "enable_shared_pets": "Afficher les animaux des appareils partagés"
+                    "enable_shared_pets": "Afficher les animaux des appareils partagés",
+                    "auto_accept_shares": "Accepter automatiquement toutes les invitations d'appareils reçues"
                 },
                 "data_description": {
                     "manual_feed_portions": "Par défaut : défini selon l’unité choisie pour la nourriture de l’animal ({uom}).",
                     "pet_feed_quantity_no_rfid": "La consommation de l’animal inclura les appareils sans RFID lorsqu’un seul animal leur est attribué.",
-                    "enable_shared_pets": "Accédez aux animaux d'autres comptes liés à des appareils qu'ils partagent avec vous."
+                    "enable_shared_pets": "Accédez aux animaux d'autres comptes liés à des appareils qu'ils partagent avec vous.",
+                    "auto_accept_shares": "Chaque invitation d'appareil en attente envoyée à ce compte PETLIBRO sera automatiquement acceptée. Toute personne invitant ce compte peut lui donner accès à un appareil."
                 }
             },
             "account_settings": {

@@ -48,12 +48,14 @@
                 "data": {
                     "manual_feed_portions": "按份量设置手动喂食量",
                     "pet_feed_quantity_no_rfid": "包含非 RFID 宠物消耗量",
-                    "enable_shared_pets": "显示来自共享设备的宠物"
+                    "enable_shared_pets": "显示来自共享设备的宠物",
+                    "auto_accept_shares": "自动接受所有收到的设备邀请"
                 },
                 "data_description": {
                     "manual_feed_portions": "默认：根据您选择的宠物饲料单位设置 ({uom})。",
                     "pet_feed_quantity_no_rfid": "当设备只分配给一只宠物时，宠物消耗量将包含非 RFID 设备。",
-                    "enable_shared_pets": "访问来自其他账户的宠物，这些宠物关联到与您共享的设备。"
+                    "enable_shared_pets": "访问来自其他账户的宠物，这些宠物关联到与您共享的设备。",
+                    "auto_accept_shares": "自动接受发送至此 PETLIBRO 账户的每一个待处理设备邀请。任何向此账户发送邀请的人都可以授予其设备访问权限。"
                 }
             },
             "account_settings": {

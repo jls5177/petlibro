@@ -48,12 +48,14 @@
                 "data": {
                     "manual_feed_portions": "Handmatige voerhoeveelheid instellen per portie",
                     "pet_feed_quantity_no_rfid": "Niet-RFID huisdierconsumptie opnemen",
-                    "enable_shared_pets": "Huisdieren van gedeelde apparaten tonen"
+                    "enable_shared_pets": "Huisdieren van gedeelde apparaten tonen",
+                    "auto_accept_shares": "Alle ontvangen apparaatuitnodigingen automatisch accepteren"
                 },
                 "data_description": {
                     "manual_feed_portions": "Standaard: ingesteld volgens de gekozen eenheid voor dierenvoer ({uom}).",
                     "pet_feed_quantity_no_rfid": "Huisdierconsumptie zal niet-RFID apparaten omvatten wanneer er slechts één huisdier aan is gekoppeld.",
-                    "enable_shared_pets": "Krijg toegang tot huisdieren van andere accounts die gekoppeld zijn aan apparaten die zij met u delen."
+                    "enable_shared_pets": "Krijg toegang tot huisdieren van andere accounts die gekoppeld zijn aan apparaten die zij met u delen.",
+                    "auto_accept_shares": "Elke openstaande apparaatuitnodiging voor dit PETLIBRO-account wordt automatisch geaccepteerd. Iedereen die dit account uitnodigt, kan het toegang geven tot een apparaat."
                 }
             },
             "account_settings": {

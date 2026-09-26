@@ -48,12 +48,14 @@
                 "data": {
                     "manual_feed_portions": "Manuelle Futtermenge nach Portionen festlegen",
                     "pet_feed_quantity_no_rfid": "Nicht-RFID-Futterverbrauch einbeziehen",
-                    "enable_shared_pets": "Haustiere von freigegebenen Geräten anzeigen"
+                    "enable_shared_pets": "Haustiere von freigegebenen Geräten anzeigen",
+                    "auto_accept_shares": "Alle eingehenden Geräteeinladungen automatisch annehmen"
                 },
                 "data_description": {
                     "manual_feed_portions": "Standard: Festgelegt nach der gewählten Einheit für Tierfutter ({uom}).",
                     "pet_feed_quantity_no_rfid": "Der Futterverbrauch umfasst auch Nicht-RFID-Geräte, wenn ihnen nur ein Haustier zugeordnet ist.",
-                    "enable_shared_pets": "Greifen Sie auf Haustiere anderer Konten zu, die mit Geräten verknüpft sind, die sie mit Ihnen teilen."
+                    "enable_shared_pets": "Greifen Sie auf Haustiere anderer Konten zu, die mit Geräten verknüpft sind, die sie mit Ihnen teilen.",
+                    "auto_accept_shares": "Jede ausstehende Geräteeinladung an dieses PETLIBRO-Konto wird automatisch angenommen. Jeder, der dieses Konto einlädt, kann ihm Zugriff auf ein Gerät gewähren."
                 }
             },
             "account_settings": {

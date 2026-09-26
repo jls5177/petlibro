@@ -269,13 +269,16 @@ class PetlibroOptionsFlow(OptionsFlow):
                 else:
                     await self.hub.pets_helper.remove_shared_pets()
 
+            if IntegrationSetting.AUTO_ACCEPT_SHARES in updates:
+                auto_reload = True
+
             await self.hub.async_refresh()
 
             if auto_reload or manual_reload:
                 abort_messages.append(
                     self.get_common_translation("reloading_integration", "The integration will reload shortly")
                 )
-                if not auto_reload:
+                if IntegrationSetting.AUTO_ACCEPT_SHARES in updates or not auto_reload:
                     self.hass.config_entries.async_schedule_reload(self.handler)
 
             # --- Done

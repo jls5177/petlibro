@@ -48,12 +48,14 @@
                 "data": {
                     "manual_feed_portions": "Establecer alimentación manual por porciones",
                     "pet_feed_quantity_no_rfid": "Incluir consumo de mascotas sin RFID",
-                    "enable_shared_pets": "Mostrar mascotas de dispositivos compartidos"
+                    "enable_shared_pets": "Mostrar mascotas de dispositivos compartidos",
+                    "auto_accept_shares": "Aceptar automáticamente todas las invitaciones de dispositivos recibidas"
                 },
                 "data_description": {
                     "manual_feed_portions": "Predeterminado: establecer según la unidad seleccionada para comida de mascotas ({uom}).",
                     "pet_feed_quantity_no_rfid": "El consumo de la mascota incluirá dispositivos sin RFID cuando solo haya una mascota asignada a ellos.",
-                    "enable_shared_pets": "Accede a mascotas de otras cuentas vinculadas a dispositivos que comparten contigo."
+                    "enable_shared_pets": "Accede a mascotas de otras cuentas vinculadas a dispositivos que comparten contigo.",
+                    "auto_accept_shares": "Se aceptará automáticamente cada invitación pendiente de dispositivo enviada a esta cuenta de PETLIBRO. Cualquiera que invite a esta cuenta puede darle acceso a un dispositivo."
                 }
             },
             "account_settings": {
