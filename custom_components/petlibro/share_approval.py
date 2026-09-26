@@ -46,9 +46,9 @@ def _state_for(hass: HomeAssistant, entry: ConfigEntry) -> ShareApprovalState:
 def _incoming_share(row: object) -> tuple[int, int] | None:
     if not isinstance(row, dict) or type(row.get("id")) is not int:
         return None
-    if type(row.get("state")) is not int or row["state"] not in (1, 2, 3, 4, 6):
+    if type(row.get("state")) is not int:
         return None
-    for key in ("shareType", "share_type", "type"):
+    for key in ("shareType", "share_type"):
         if key in row and (type(row[key]) is not int or row[key] != 2):
             return None
     for key in ("direction", "shareDirection"):

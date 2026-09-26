@@ -41,10 +41,10 @@ _module("homeassistant.util", __path__=[])
 _module("homeassistant.util.dt", utcnow=lambda: None)
 _module("aiohttp", ClientSession=object, ClientError=OSError)
 
-from enum import StrEnum
+from enum import Enum
 
 
-class IntegrationSetting(StrEnum):
+class IntegrationSetting(str, Enum):
     AUTO_ACCEPT_SHARES = "auto_accept_shares"
 
     @property
@@ -312,7 +312,7 @@ class TestShareApproval(unittest.IsolatedAsyncioTestCase):
             {"id": 4, "state": "1"}, {"id": 5, "state": True},
             {"id": 6, "state": 2}, {"id": 7, "state": 1, "shareType": 1},
             {"id": 8, "state": 1, "direction": "outgoing"},
-            {"id": 9, "state": 1, "type": 2, "direction": "incoming"},
+            {"id": 9, "state": 1, "type": 1, "direction": "incoming"},
             {"id": 1, "state": 1}, None,
         ]
         api = ShareAPI(rows)
@@ -356,12 +356,35 @@ class TestShareApproval(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(21, state.attempts)
 
     async def test_incoming_history_rows_do_not_warn(self):
-        api = ShareAPI([{"id": state, "state": state, "shareType": 2} for state in (2, 3, 4, 6)])
+        api = ShareAPI(
+            [
+                {"id": state, "state": state, "type": 1}
+                for state in (2, 3, 4, 5, 6)
+            ]
+        )
         with patch.object(share_module._LOGGER, "warning") as warning:
             await share_module.async_check_incoming_shares(self.hass, self.entry, api)
         warning.assert_not_called()
         api.accept_incoming_share.assert_not_awaited()
         self.hass.config_entries.async_schedule_reload.assert_not_called()
+
+    async def test_live_incoming_row_shape_accepts_pending_invitation(self):
+        api = ShareAPI(
+            [
+                {
+                    "id": 41,
+                    "state": 1,
+                    "type": 1,
+                    "recordState": 1,
+                    "shareWay": 1,
+                }
+            ]
+        )
+        await share_module.async_check_incoming_shares(self.hass, self.entry, api)
+        api.accept_incoming_share.assert_awaited_once_with(41)
+        self.hass.config_entries.async_schedule_reload.assert_called_once_with(
+            "entry-1"
+        )
 
     async def test_rejected_id_suppressed(self):
         api = ShareAPI([{"id": 30, "state": 1}])

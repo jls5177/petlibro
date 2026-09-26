@@ -88,13 +88,17 @@ The following contract is confirmed in
 [`rhyst/petlibro-web` commit `c2ad5e16`](https://github.com/rhyst/petlibro-web/commit/c2ad5e16bdd1d78f0cf9fc96da0b157efa4298dc)
 (reviewed 2026-09-26). Both endpoints return the usual `{ "code", "msg",
 "data" }` envelope. The precise pagination or wrapper format, if any, for
-the current list response is **not confirmed**; the integration accepts only
-an actual array in `data` and reports any other shape as an error.
+The current list response was confirmed against the live API in September
+2026. The response `data` is an array; the integration reports any other shape
+as an error.
 
 - **POST `/device/deviceShare/myShareList`** with
   `{ "shareType": 2 }` lists invitations received by this account.
   A pending invitation has integer `state: 1`; its integer `id` is the
   share ID, not the device ID.
+  Returned rows currently contain `type: 1`; this field is not the share
+  direction and must not be compared with the request's `shareType`. Observed
+  historical states include `2`, `4`, and `5`; only state `1` is accepted.
 - **POST `/device/deviceShare/rec`** with
   `{ "shareId": <integer share ID>, "rec": true }` accepts one invitation.
   The integration never sends `rec: false` automatically.
